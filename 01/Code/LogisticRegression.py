@@ -39,6 +39,9 @@ class LogisticRegression(Transformer):
         #main loop
         converged = False
         cnt = 0
+        lclCheck = min(n,1000)#check for LCL changes after this number of iterations
+        lastLCL = 0.
+        stopLCLChng = .001
         while not converged:
             #pick the next shuffled sample
             m = idx[cnt]
@@ -47,8 +50,14 @@ class LogisticRegression(Transformer):
             Pm = 1. / (1. + np.exp( -np.dot(xm,beta) ) )
             beta = beta + landa * (y[m]-Pm)*xm
             #update landa
-            
             cnt = cnt+1 % n
+            if cnt==lclcheck:
+                Pm = 1./ (1. + np.dot(X,beta))
+                LCL = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
+                LCL = LCL.sum()
+                if np.abs(LCL-lastLCL) < stopLCLChng:
+                    converged = True
+
     # the LBFGS training function
     def trainLBFGS(X,y):
         
