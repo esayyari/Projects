@@ -67,7 +67,10 @@ class LogisticRegression(Transformer):
         #initialize parameters
         beta = 0.01 * np.random.randn([d+1,1])
         #call lbfgs_b
-        scipy.optimize.fmin_l_bfgs_b(self.LCL, beta, fprime=self.LCLderiv, args=(augX,y), iprint=0)
+        x,f,d = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta, fprime=self.LCLderiv, args=(augX,y), iprint=0)
+        #store the parameters
+        self.beta = x
+        print "LCL for optimal beta ", f
         
     # beta is a column vector of size d
     def LCL(self,beta,*args):
