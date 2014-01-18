@@ -1,5 +1,6 @@
 import numpy as np
 import sklearn
+import scipy.optimize
 
 class LogisticRegression(Transformer):
     def __init__(self,**kwrds):
@@ -25,7 +26,7 @@ class LogisticRegression(Transformer):
     ######   to be completed, training code goes here ######
     
     #the SGD training function
-    def trainSGD(X,y):
+    def trainSGD(self,X,y):
         n,d = X.shape
         #augment X with 1
         augX = np.concatenate([X,np.ones([n,1])],axis=1)
@@ -52,14 +53,29 @@ class LogisticRegression(Transformer):
             #update landa
             cnt = cnt+1 % n
             if cnt==lclcheck:
-                Pm = 1./ (1. + np.dot(X,beta))
+                Pm = 1./ (1. + np.exp(-np.dot(X,beta)))
                 LCL = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
                 LCL = LCL.sum()
                 if np.abs(LCL-lastLCL) < stopLCLChng:
                     converged = True
 
     # the LBFGS training function
-    def trainLBFGS(X,y):
+    def trainLBFGS(self,X,y):
+        n,d = X.shape
+        #augment X with 1
+        augX = np.concatenate([X,np.ones([n,1])],axis=1)
+        #initialize parameters
+        beta = 0.01 * np.random.randn([d+1,1])
+        #call lbfgs_b
+        scipy.optimize.fmin_l_bfgs_b(self.LCL, beta, fprime=self.LCLderiv, args=(augX,y), iprint=0)
+        
+    # beta is a column vector of size d
+    def LCL(self,beta,*args):
+        X = args[0]# n x d
+        y = args[1]# n x 1
+        Pm = 1./ (1. + np.exp(-np.dot(X,beta)))
+        lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
+        return lcl.sum()
         
     #convert a set of inputs to the corresponding label values
     def transform(self,X):
