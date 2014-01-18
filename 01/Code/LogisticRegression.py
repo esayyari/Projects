@@ -80,6 +80,14 @@ class LogisticRegression(Transformer):
         lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
         return lcl.sum()
         
+    def LCLderiv(self,beta,*args):
+        X = args[0]# n x d
+        y = args[1]# n x 1
+        n,d = X.shape
+        Pm = 1./ (1. + np.exp(-np.dot(X,beta)))# n x 1
+        temp = np.tile(y-Pm,[1,d])*X
+        return np.sum(temp,axis=0).reshape([-1,1])
+        
     #convert a set of inputs to the corresponding label values
     def transform(self,X):
         
