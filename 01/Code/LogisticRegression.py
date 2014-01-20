@@ -8,6 +8,12 @@ from sklearn.preprocessing import StandardScaler
 class LogisticRegression(Transformer):
     def __init__(self,**kwrds):
         self.learning = "SGD"
+        self.eta=0.01
+        self.eta_decay=0.5
+        self.beta_decay=0
+        self.max_epoc=10
+        self.batch_size=1
+        self.eps=1e-6
         Transformer.__init__(self,**kwrds)
     
     #parameters set and get
@@ -15,6 +21,16 @@ class LogisticRegression(Transformer):
         for k in kwrds.keys():
             if k=="learning":
                 self.learning = kwrds[k]
+            elif k=="eta_0":
+                self.eta = kwrds[k]
+            elif k=="eta_decay":
+                self.eta_decay = kwrds[k]
+            elif k=="beta_decay":
+                self.beta_decay = kwrds[k]
+            elif k=="max_epoch":
+                self.max_epoch = kwrds[k]
+            elif k=="batch_size":
+                self.batch_size = kwrds[k]
     
     def get_params(self,deep=False):
         return dict({"learning":self.learning,#either SGD or LBFGS
@@ -22,6 +38,9 @@ class LogisticRegression(Transformer):
 
     #fit function
     def fit(self,X,y=None,**kwrds):
+        self.pos=np.nonzero(y == 1)
+        self.neg=np.nonzero(y != 1)
+        self.lcl = np.ones(X.shape[0])
         self.set_params(**kwrds)
         if self.learning=="SGD":
             self.trainSGD(X,y)
@@ -37,7 +56,28 @@ class LogisticRegression(Transformer):
     
     #the SGD training function
     def trainSGD(self,X,y):
-        pass
+        n,d = X.shape
+        ones = np.ones([n,1])
+        #augment X with 1
+        augX = np.concatenate([X.toarray(),ones],axis=1)
+        self.scaler = StandardScaler().fit(augX)
+        augX = self.scaler.transform(augX)
+        self.X_train = augX
+        self.y_train = y
+        #initialize parameters
+        self.beta = 0.0001 * np.random.randn(d+1)
+        obj=self.LCL(self.beta)
+#         print 'epoch: {0} LCL: {1}'.format(0, obj)
+        for epoch in range(self.max_epoc):
+            for iter in range(n):
+                g=self.LCLderiv(self.beta,self.batch_size, iter)
+                self.beta-= self.eta*g
+                obj=self.LCL(self.beta)
+#                 print 'iter: {0} LCL: {1}'.format(iter, obj)
+            self.eta*=self.eta_decay
+            obj=self.LCL(self.beta)
+#             print 'epoch: {0} LCL: {1}'.format(epoch+1, obj)
+            
 
     # the LBFGS training function
     def trainLBFGS(self,X,y):
@@ -52,7 +92,7 @@ class LogisticRegression(Transformer):
         #initialize parameters
         beta = 0.0001 * np.random.randn(d+1)
         ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,pgtol=1e-5)
-        print type(ret)
+#         print type(ret)
         #store the parameters
         self.beta = ret[0]
         #print "params:",ret
@@ -61,21 +101,27 @@ class LogisticRegression(Transformer):
     def LCL(self,beta,*args):
         X = self.X_train# n x d
         y = self.y_train# n x 1
+        n,d=X.shape
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
-        #print Pm.min(),Pm.max()
-        lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
-        return -lcl.sum()
+#         print "***********", Pm.min(),Pm.max()
+#         self.lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm) #Mohsen's (not efficient)
+        self.lcl[self.pos] = np.log(Pm[self.pos])
+        self.lcl[self.neg] =  np.log(1.-Pm[self.neg])
+        return -self.lcl.sum()
         
-    def LCLderiv(self,beta,*args):
-        X = self.X_train# n x d
-        y = self.y_train# n x 1
+    def LCLderiv(self,beta,bath_size=None, index=None):
+        if bath_size == None:
+            X = self.X_train# n x d
+            y = self.y_train# n x 1
+        else:
+            X = self.X_train[index:index+bath_size,:]# n x d
+            y = self.y_train[index:index+bath_size]# n x 1
         n,d = X.shape
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         t1 = y-Pm
-        temp = np.tile(t1.reshape([-1,1]),[1,d]) *X
-        temp = -np.sum(temp,axis=0)
-        #print temp.shape
-        return temp
+        g = np.tile(t1.reshape([-1,1]),[1,d]) *X
+        g = -np.sum(g,axis=0)
+        return g
         
     #convert a set of inputs to the corresponding label values
     def transform(self,X):
@@ -90,5 +136,4 @@ class LogisticRegression(Transformer):
 
     def score(self,X,y):
         y_p = self.transform(X)
-        print y_p
         return np.mean(y_p==y)
