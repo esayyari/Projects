@@ -1,5 +1,18 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.2}{Design and Analysis of Algorithm}{}% 2
-\BOOKMARK [1][-]{section.3}{Design of Experiments}{}% 3
-\BOOKMARK [1][-]{section.4}{Results of Experiments}{}% 4
-\BOOKMARK [1][-]{section.5}{Findings and Lessons Learned}{}% 5
+\BOOKMARK [2][-]{subsection.2.1}{Stochastic Gradient Descent}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{LBFGS}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Regularization}{section.2}% 5
+\BOOKMARK [1][-]{section.3}{Design of Experiments}{}% 6
+\BOOKMARK [2][-]{subsection.3.1}{Initialization}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.2}{Preprocessing}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.3}{Grid Search}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.4}{Performance Measure}{section.3}% 10
+\BOOKMARK [1][-]{section.4}{Results of Experiments}{}% 11
+\BOOKMARK [2][-]{subsection.4.1}{Logistic Regression}{section.4}% 12
+\BOOKMARK [2][-]{subsection.4.2}{Regularized Logistic Regression}{section.4}% 13
+\BOOKMARK [1][-]{section.5}{Findings and Lessons Learned}{}% 14
+\BOOKMARK [2][-]{subsection.5.1}{Numerical Issues and Preprocessing}{section.5}% 15
+\BOOKMARK [2][-]{subsection.5.2}{Overfitting}{section.5}% 16
+\BOOKMARK [2][-]{subsection.5.3}{Model Selection}{section.5}% 17
+\BOOKMARK [2][-]{subsection.5.4}{Trade-off Between Mini-Batch size and Rate of Convergence}{section.5}% 18

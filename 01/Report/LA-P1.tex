@@ -23,18 +23,51 @@
 \begin{document}
 
 \title{Learning Algorithms, Project 1}
-\author{Arya Iranmehr, Mohsen Malmir}
+\author{Arya Iranmehr, Mohsen Malmir, Erfan Sayyari}
 \maketitle
 
 \section{Introduction}
 
 \section{Design and Analysis of Algorithm}
+Objective function
+\begin{equation}
+LCL=\sum_{i:y_i=1} \log p_i +\sum_{i:y_i=-1} \log (1-p_i)
+\label{eq:LCL}
+\end{equation}
+
+Partial derivative
+\begin{equation}
+\nabla_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i} (y_i-p_i)x_{ij}
+\label{eq:pLCL}
+\end{equation}
+
+Stochastic gradient $\tilde{\nabla}$ for the stochastic mini-batch $\Omega$
+\begin{equation}
+\tilde{\nabla}_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i \in \Omega} (y_i-p_i)x_{ij}
+\label{eq:pLCL}
+\end{equation}
+\subsection{Stochastic Gradient Descent}
+The Stochastic Gradient Descent (SGD) method approximates objective function, simply by restricting the training set to a mini-batch, i.e. random sample. 
+This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence.
+
+\subsection{LBFGS}
+\subsection{Regularization}
 
 \section{Design of Experiments}
+\subsection{Initialization}
+\subsection{Preprocessing}
+\subsection{Grid Search}
+\subsection{Performance Measure}
 
 \section{Results of Experiments}
+\subsection{Logistic Regression}
+\subsection{Regularized Logistic Regression}
 
 \section{Findings and Lessons Learned}
+\subsection{Numerical Issues and Preprocessing}
+\subsection{Overfitting}
+\subsection{Model Selection}
+\subsection{Trade-off Between Mini-Batch size and Rate of Convergence}
 
 \end{document}
 
