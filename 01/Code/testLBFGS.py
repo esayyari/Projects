@@ -18,7 +18,7 @@ X_test = X_test.toarray()
 idx = np.where(y_test==-1)
 y_test[idx] = 0.
 parameters = dict({
-    "clf__mu"      : [.001,.01,.1,1,10,100,1000],
+    "clf__weight_decay"      : [.001,.01,.1,1,10,100,1000],
     "clf__lcl"     : [[]],
     "clf__lcltest" : [[]],
     "clf__betanorm": [[]],
