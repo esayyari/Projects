@@ -4,7 +4,8 @@ import sklearn.linear_model as linear_model
 from LogisticRegression import LogisticRegression
 from readdata import read_data
 from sklearn import cross_validation
-
+from sklearn.pipeline import Pipeline
+from sklearn.grid_search import GridSearchCV
 
 X_train,y_train = read_data("./Data/train")
 X_train = X_train.toarray()
@@ -16,12 +17,23 @@ X_test,y_test = read_data("./Data/test")
 X_test = X_test.toarray()
 idx = np.where(y_test==-1)
 y_test[idx] = 0.
-for train, test in kf:
-    X_tn, X_ts, y_tn, y_ts = X_train[train], X_train[test], y_train[train], y_train[test]
-    lr = LogisticRegression(learning="LBFGS")
-    lr.fit(X_tn,y_tn)
-    print "kfold score:",lr.score(X_ts,y_ts)
-    print "test score:",lr.score(X_test,y_test)
+parameters = dict({
+    "clf__mu"      : [.001,.01,.1,1,10,100,1000],
+    "clf__lcl"     : [[]],
+    "clf__lcltest" : [[]],
+    "clf__betanorm": [[]],
+                  })
 
+lr = LogisticRegression(learning="LBFGS",X_test=X_test,y_test=y_test,lcl=[],lcltest=[])
+pipeline = Pipeline([
+                        ("clf"  ,lr),
+                    ])
+f = GridSearchCV(pipeline,parameters,n_jobs=-1,verbose=-1,cv=10)
+f.fit(X_train,y_train)
+best_parameters = f.best_estimator_.get_params()
+for param_name in sorted(parameters.keys()):
+    print("\t%s: %r" % (param_name, best_parameters[param_name]))
 sklr = linear_model.LogisticRegression(penalty="l2",C=10000.).fit(X_train,y_train)
+print "score on test:",f.score(X_test,y_test)
+print("Best score: %0.3f" % f.best_score_)
 print "sklearn.lr score:",sklr.score(X_test,y_test)
