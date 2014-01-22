@@ -82,22 +82,24 @@ class LogisticRegression(Transformer):
 #             print 'epoch: {0} LCL: {1}'.format(epoch+1, obj)
             
 
-    # the LBFGS training function
+     # the LBFGS training function
     def trainLBFGS(self,X,y):
         n,d = X.shape
         ones = np.ones([n,1])
         #augment X with 1
-        augX = np.concatenate([X.toarray(),ones],axis=1)
+        augX = np.concatenate([X,ones],axis=1)
         self.scaler = StandardScaler().fit(augX)
         augX = self.scaler.transform(augX)
         self.X_train = augX
         self.y_train = y
         #initialize parameters
         beta = 0.0001 * np.random.randn(d+1)
-        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,pgtol=1e-5)
-#         print type(ret)
+        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,factr=1e17,
+                                              callback=self.bookkeeping)
+        #print type(ret)
         #store the parameters
         self.beta = ret[0]
+        #print self.beta
         #print "params:",ret
         
     # beta is a column vector of size d
@@ -140,3 +142,26 @@ class LogisticRegression(Transformer):
     def score(self,X,y):
         y_p = self.transform(X)
         return np.mean(y_p==y)
+        
+        
+   def bookkeeping(self,beta,*args):
+        self.lcl.append(self.LCL(beta))
+        self.lcltest.append(self.lclTest(beta)) 
+        self.betanorm.append(np.sqrt(np.square(beta).sum()))
+       # beta is a column vector of size d
+
+    def lclTest(self,beta,*args):
+        X = self.X_test# n x d
+        y = self.y_test# n x 1
+        n,d = X.shape
+        ones = np.ones([n,1])
+        #augment X with 1
+        augX = np.concatenate([X,ones],axis=1)
+        augX = self.scaler.transform(augX)
+        X = augX
+        Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
+        #print Pm.min(),Pm.max()
+        lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
+        return -lcl.sum() + self.mu * np.sqrt(np.square(beta).sum())
+ 
+        
