@@ -11,7 +11,7 @@ class LogisticRegression(Transformer):
         self.eta=0.01
         self.eta_decay=0.9
         self.beta_decay=0
-        self.max_epoc=10
+        self.max_epoc=5
         self.batch_size=1
         self.eps=1e-6
         self.weight_decay=1
@@ -76,9 +76,16 @@ class LogisticRegression(Transformer):
                 g=self.LCLderiv(self.beta,self.batch_size, iter)
                 self.beta-= self.eta*g
                 obj=self.LCL(self.beta)
+#                 print 'norm_beta',np.linalg.norm(self.beta) ,'obj', obj
+                if obj==float('inf'):
+                    return
 #                 print 'iter: {0} LCL: {1}'.format(iter, obj)
             self.eta*=self.eta_decay
             obj=self.LCL(self.beta)
+#             if np.linalg.norm(beta, ord=inf) <0.001:
+#                 beta=np.zeros(d+1)
+#                 break
+            
 #             print 'epoch: {0} LCL: {1}'.format(epoch+1, obj)
             
 

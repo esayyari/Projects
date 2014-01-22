@@ -15,7 +15,7 @@ def read_data(data_file_name, normalize=True, permute=False):
     return (X,y)
 
 def LR_SGD_grid(X, y, fold=4, range_eta=[1e-3, 1e-2, 1e-1, 1e0, 1e1]):
-    best_acc, best_eta, best_edecay=0, None, None
+    best_acc, best_eta=0, None
     with open('LR.SGD.grid', 'w') as f:
         for eta in range_eta:
             acc=cross_validation(X, y, fold, eta, "SGD")
@@ -25,24 +25,25 @@ def LR_SGD_grid(X, y, fold=4, range_eta=[1e-3, 1e-2, 1e-1, 1e0, 1e1]):
             print 'CV Accuracy: {0}  eta: {1}'.format(acc, eta)
         f.write('****************\n{0}\t{1}\n'.format(best_eta, best_acc))
     print 'Best eta: {0}  Best CV Accuracy: {1}'.format(best_eta, best_acc)
-    return best_eta, best_edecay
+    return best_eta
             
 
-def RLR_SGD_grid(X, y, fold, range_weight_decay=[1e-2, 1e-1, 1e0, 1e1, 1e2], range_eta= [1e-3, 1e-2, 1e-1, 1e0, 1e1]):
+def RLR_SGD_grid(X, y, fold=4, range_weight_decay=[1e-2, 1e-1, 1e0, 1e1, 1e2], range_eta= [1e-3, 1e-2, 1e-1, 1e0, 1e1]):
+# def RLR_SGD_grid(X, y, fold=4, range_weight_decay=[1e2], range_eta= [1e-1, 1e0, 1e1]):
     best_acc, best_eta, best_weight=0, None, None
     with open('RLR.SGD.grid', 'w') as f:
         for eta in range_eta:
             for weight in range_weight_decay:
-                acc=cross_validation(X, y, fold, eta, weight, "SGD")
+                acc=cross_validation(X, y, fold, eta, "SGD", weight)
                 if acc>best_acc:
                     best_acc, best_eta, best_weight=acc, eta, weight
                 f.write('{0}\t{1}\t{2}\n'.format(eta,weight,acc))
                 print 'eta: {0}  Weight decay: {1}  CV Accuracy: {2}'.format(eta, weight, acc)
         f.write('****************\n{0}\t{1}\t{2}\n'.format(best_eta, best_weight, best_acc))
     print 'Best eta: {0}  Best Weight decay: {1}  Best CV Accuracy: {2}'.format(best_eta, best_weight, best_acc)
-    return best_eta
+    return best_eta, best_weight
 
-def cross_validation(X,y,fold, eta, solver="SGD", wdecay=None):
+def cross_validation(X,y,fold, eta, solver="SGD", wdecay=0):
     from sklearn.cross_validation import StratifiedKFold
     from LogisticRegression import LogisticRegression
     scores=[]
