@@ -9,11 +9,12 @@ class LogisticRegression(Transformer):
     def __init__(self,**kwrds):
         self.learning = "SGD"
         self.eta=0.01
-        self.eta_decay=0.5
+        self.eta_decay=0.9
         self.beta_decay=0
         self.max_epoc=10
         self.batch_size=1
         self.eps=1e-6
+        self.weight_decay=1
         Transformer.__init__(self,**kwrds)
     
     #parameters set and get
@@ -31,6 +32,8 @@ class LogisticRegression(Transformer):
                 self.max_epoch = kwrds[k]
             elif k=="batch_size":
                 self.batch_size = kwrds[k]
+            elif k=="weight_decay":
+                self.weight_decay = kwrds[k]
     
     def get_params(self,deep=False):
         return dict({"learning":self.learning,#either SGD or LBFGS
@@ -107,7 +110,7 @@ class LogisticRegression(Transformer):
 #         self.lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm) #Mohsen's (not efficient)
         self.lcl[self.pos] = np.log(Pm[self.pos])
         self.lcl[self.neg] =  np.log(1.-Pm[self.neg])
-        return -self.lcl.sum()
+        return -self.lcl.sum() +self.weight_decay* np.linalg.norm(beta)
         
     def LCLderiv(self,beta,bath_size=None, index=None):
         if bath_size == None:
@@ -120,7 +123,7 @@ class LogisticRegression(Transformer):
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         t1 = y-Pm
         g = np.tile(t1.reshape([-1,1]),[1,d]) *X
-        g = -np.sum(g,axis=0)
+        g = -np.sum(g,axis=0)+self.weight_decay*beta[index+bath_size]
         return g
         
     #convert a set of inputs to the corresponding label values

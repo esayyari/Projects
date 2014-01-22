@@ -14,32 +14,42 @@ def read_data(data_file_name, normalize=True, permute=False):
     y[idx] = 0.
     return (X,y)
 
-def LR_SGD_grid(X, y, fold=4, range_eta=[1e-2, 1e-1, 1e0], range_eta_dacey= [0.01, 0.1, 0.5, 0.9]):
+def LR_SGD_grid(X, y, fold=4, range_eta=[1e-3, 1e-2, 1e-1, 1e0, 1e1]):
     best_acc, best_eta, best_edecay=0, None, None
     with open('LR.SGD.grid', 'w') as f:
         for eta in range_eta:
-            for edecay in range_eta_dacey:
-                acc=cross_validation(X, y, fold, eta, edecay, "SGD")
-                if acc>best_acc:
-                    best_acc, best_eta, best_edecay=acc, eta, edecay
-                f.write('{0}\t{1}\t{2}\n'.format(eta,edecay,acc))
-                print 'CV Accuracy: {0}  eta: {1}  eta_decay: {2}'.format(acc, eta, edecay)
-        f.write('****************\n{0}\t{1}\t{2}\n'.format(best_acc, best_eta, best_edecay))
-    print 'Best CV Accuracy: {0}  Best eta: {1}  Best eta_decay: {2}'.format(best_acc, best_eta, best_edecay)
+            acc=cross_validation(X, y, fold, eta, "SGD")
+            if acc>best_acc:
+                best_acc, best_eta=acc, eta
+            f.write('{0}\t{1}\n'.format(eta,acc))
+            print 'CV Accuracy: {0}  eta: {1}'.format(acc, eta)
+        f.write('****************\n{0}\t{1}\n'.format(best_eta, best_acc))
+    print 'Best eta: {0}  Best CV Accuracy: {1}'.format(best_eta, best_acc)
     return best_eta, best_edecay
             
 
-def RLR_SGD_grid(X, y, fold, ranges=None):
-    pass
+def RLR_SGD_grid(X, y, fold, range_weight_decay=[1e-2, 1e-1, 1e0, 1e1, 1e2], range_eta= [1e-3, 1e-2, 1e-1, 1e0, 1e1]):
+    best_acc, best_eta, best_weight=0, None, None
+    with open('RLR.SGD.grid', 'w') as f:
+        for eta in range_eta:
+            for weight in range_weight_decay:
+                acc=cross_validation(X, y, fold, eta, weight, "SGD")
+                if acc>best_acc:
+                    best_acc, best_eta, best_weight=acc, eta, weight
+                f.write('{0}\t{1}\t{2}\n'.format(eta,weight,acc))
+                print 'eta: {0}  Weight decay: {1}  CV Accuracy: {2}'.format(eta, weight, acc)
+        f.write('****************\n{0}\t{1}\t{2}\n'.format(best_eta, best_weight, best_acc))
+    print 'Best eta: {0}  Best Weight decay: {1}  Best CV Accuracy: {2}'.format(best_eta, best_weight, best_acc)
+    return best_eta
 
-def cross_validation(X,y,fold, eta, edecay, solver):
+def cross_validation(X,y,fold, eta, solver="SGD", wdecay=None):
     from sklearn.cross_validation import StratifiedKFold
     from LogisticRegression import LogisticRegression
     scores=[]
     skf = StratifiedKFold( y, fold) 
     for train_index, test_index in skf:
         X_train, X_test, y_train, y_test = X[train_index,:], X[test_index,:], y[train_index], y[test_index]
-        lr = LogisticRegression(learning=solver,eta_decay=edecay,eta_0=eta)
+        lr = LogisticRegression(learning=solver,weight_decay=wdecay,eta_0=eta)
         lr.fit(X_train,y_train)
         scores.append(lr.score(X_test,y_test))
     return np.mean(scores)
