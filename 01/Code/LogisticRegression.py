@@ -114,18 +114,18 @@ class LogisticRegression(Transformer):
         self.lcl[self.neg] =  np.log(1.-Pm[self.neg])
         return -self.lcl.sum() +self.weight_decay* np.linalg.norm(beta)
         
-    def LCLderiv(self,beta,bath_size=None, index=None):
-        if bath_size == None:
+    def LCLderiv(self,beta,batch_size=None, index=None):
+        if batch_size == None:
             X = self.X_train# n x d
             y = self.y_train# n x 1
         else:
-            X = self.X_train[index:index+bath_size,:]# n x d
-            y = self.y_train[index:index+bath_size]# n x 1
+            X = self.X_train[index:index+batch_size,:]# n x d
+            y = self.y_train[index:index+batch_size]# n x 1
         n,d = X.shape
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         t1 = y-Pm
         g = np.tile(t1.reshape([-1,1]),[1,d]) *X
-        g = -np.sum(g,axis=0)+self.weight_decay*beta[index+bath_size]
+        g = -np.sum(g,axis=0)+self.weight_decay*beta
         return g
         
     #convert a set of inputs to the corresponding label values
@@ -143,8 +143,7 @@ class LogisticRegression(Transformer):
         y_p = self.transform(X)
         return np.mean(y_p==y)
         
-        
-   def bookkeeping(self,beta,*args):
+    def bookkeeping(self,beta,*args):
         self.lcl.append(self.LCL(beta))
         self.lcltest.append(self.lclTest(beta)) 
         self.betanorm.append(np.sqrt(np.square(beta).sum()))
@@ -162,6 +161,6 @@ class LogisticRegression(Transformer):
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         #print Pm.min(),Pm.max()
         lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
-        return -lcl.sum() + self.mu * np.sqrt(np.square(beta).sum())
+        return -lcl.sum() + self.weight_decay * np.sqrt(np.square(beta).sum())
  
         
