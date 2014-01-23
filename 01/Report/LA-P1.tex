@@ -51,6 +51,15 @@ The Stochastic Gradient Descent (SGD) method approximates objective function, si
 This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence.
 
 \subsection{LBFGS}
+We used the {\it fmin\_l\_bfgs\_b} from { \it scipy.optimize} package, which implements the limited memory {\it BFGS} algorithm and is written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal. This function takes as input the function to be minimized, which is in this case the negative of regularized conditional log-likelihood,
+\begin{equation}
+RLCL = \sum_{i=1}^N y_i \log(P_i) + (1-y_i)\log(1 - P_i) - \mu \|\beta\|_2^2
+\end{equation}
+where 
+\begin{equation}
+P_i = \frac{1}{1+e^{-\sum_{j=1}^d \beta_j x^i_j}}
+\end{equation}
+Is the probability of the $i$th sample $x^i$ belonging to class with label 1. 
 \subsection{Regularization}
 
 \section{Design of Experiments}
