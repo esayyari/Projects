@@ -14,6 +14,7 @@
 \usepackage{amssymb,amsmath}
 \usepackage{mdwlist }
 \usepackage{color}
+\usepackage[english]{babel}
 \definecolor{darkblue}{rgb}{0.0,0.0,0.5}
 \newtheorem{Dfn}{Definition}
 \hypersetup{colorlinks,breaklinks,
@@ -103,7 +104,34 @@ In the second experiment, we omitted the search for initial value for the parame
 \caption{LCL and RLCL for train and test sets for the case with no search over initial weight values.}
 \end{figure}
 
+For the third case, we used grid search over both initial value for $\beta$ and the regularization parameter $\mu$. The grid search used a 3-fold cross validation over the training data to pick the best model. Figure \ref{figBFGSComplete} shows the objective function for this run.
 
+\begin{figure}[h!]
+\label{figBFGSComplete}
+\centering
+\includegraphics[width=0.8\textwidth]{bfgs.png}
+\caption{LCL and RLCL for train and test sets for the case with search over initial weight values and the regularization parameter.}
+\end{figure}
+
+Table \ref{tableBFGS} shows the result of recognition for train and test sets for L-BFGS learning for the three cases mentioned above.\\
+
+
+\begin{table}[h!]\footnotesize
+\label{tblbfgsrates}
+  \caption{L-BFGS Recognition rate for different experiments}
+\begin{center}
+    \begin{tabular}{| c | c | c | }
+    \hline
+    \textbf{ Method} & \textbf{Training set recognition rate} & \textbf{Test set recognition} \\ \hline
+    BFGS- no regularization & 0.9 & 0.91  \\ \hline
+    BFGS- regularized with constant $\beta_0=0.1$ & 0.891 & 0.924  \\ \hline
+    BFGS- regularized with search over $\beta_0$ & 0.894 & 0.916  \\ \hline
+    sklearn.LogisticRegression & 0.905 & 0.916  \\ \hline
+    
+    \end{tabular}
+\end{center}
+
+\end{table}
 
 \section{Findings and Lessons Learned}
 \subsection{Numerical Issues and Preprocessing}

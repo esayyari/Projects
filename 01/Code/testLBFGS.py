@@ -19,7 +19,7 @@ idx = np.where(y_test==-1)
 y_test[idx] = 0.
 parameters = dict({
     "clf__weight_decay"      : [.001,.01,.1,1,10,100,1000],
-#    "clf__init_beta"         : [0.,0.00001,.0001,0.001,.01,.1,1.,10],
+    "clf__init_beta"         : [0.,0.00001,.0001,0.001,.01,.1,1.,10],
                   })
 
 lr = LogisticRegression(learning="LBFGS",X_test=X_test,y_test=y_test)
