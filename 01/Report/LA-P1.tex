@@ -103,14 +103,20 @@ which the term $\Vert\beta_j\Vert^2_2=\beta^T\beta$ penalizes $\beta$s with larg
 \subsection{Computational Complexity}
 Our implementation of SGD consist of two nested loops. The outer loop counts up to \emph{max-epochs}, which in each of its iterations it takes one pass over training set.
 In the inner loop, algorithm selects a mini-batch of size $|\Omega|=k$ from dataset and computes gradient for it which costs $\mathcal{O}(kd)$, provided that we reuse the probability estimates. The inner loop iterates $\frac{n}{k}$ times so the total computational complexity of the algorithm is of $\mathcal{O}(nd)$
+
+However, we implemented our code so that it can exploits the sparsity structure of the data, so, having average $\tilde{d}$ nonzero feature per training example, the computational complexity of our implementation is $\mathcal{O}(n\tilde{d})$.
+
 \subsection{Implementation}
+We have efficiently implemented our code using \emph{Python} scripting language and well known packages \emph{NumPy} and \emph{SciPy}. The SciPy package provides sparse data structures and corresponding efficient sparse methods for dot products and matrix computation.
+
+For the hyperparameters $MAX_EPOCHS$ and $\eta$ (learning rate decay) we chose 10 and $0.9$, respectively. Also, for early stop, we used tolerance of $0.01$ in increase of objective function. Finally, we initialized $\beta$ by small random values around zero.
 
 \section{Design of Experiments}
 \subsection{Initialization}
 \subsection{Preprocessing}
 \subsection{Grid Search}
 \subsection{Performance Measure}
->>>>>>> 4144f496c7b580afd51bd42a6d3f799d6b24b911
+
 
 \section{Results of Experiments}
 \subsection{Logistic Regression}
