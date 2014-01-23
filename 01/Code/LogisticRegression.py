@@ -111,7 +111,7 @@ class LogisticRegression(Transformer):
         self.X_train = augX
         self.y_train = y
         #initialize parameters
-        beta = 0.0001 * np.random.randn(d+1)
+        beta = 0.1 * np.random.randn(d+1)
         ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,factr=1e17,
                                               callback=self.bookkeeping)
         #print type(ret)
