@@ -63,9 +63,16 @@ Is the probability of the $i$th sample $x^i$ belonging to class with label 1.
 \section{Design of Experiments}
 \subsection{SGD}
 \subsubsection{Initialization}
+Since the problem is convex and the computational effort of each step is inexpensive, the initialization of SGD is not really important. So we simply initialized the parameter vector $\beta$ randomly by sampling from normal distribution. 
+
 \subsubsection{Preprocessing}
+Variety of the range of the features directly affects conditioning of the objective. Roughly speaking, if the variance of the features for data are significantly different the problem is ill-conditioned, and optimizing ill-conditioned problem with gradient-based methods leads to slow rates of convergence or even failure of convergence. To remedy this issue, we normalize all the features so that their mean and variance be 0 and 1, respectively.
+
 \subsubsection{Grid Search}
+We examined logistic regression (LR) and regularized logistic regression (RLR) in our experiments. The only difference is that in the prior, we know that $\mu=0$ which means that for LR we have one hyperparameter less to search. In order to find hyperparameters for LR ($\lambda_0$) and RLR ($\lambda_0,\mu$) we performed a coarse grid search on hyperparameter space, i.e. for $\lambda_0$ we used the range $(10^{-3}, 10^{-2}, 10^{-1}, 10^{0})$ and for $\mu$ we used the range $(10^{-3}, 10^{-2}, 10^{-1}, 10^{0}, 10^{1}, 10^{2} )$. For LR we have one hyperparameter and the grid search is one dimensional and for RLR the grid search is a 2-dimensional search over pairs of $\lambda_0 $ and $\mu$.
+
 \subsubsection{Performance Measure}
+While the logistic regression optimizes LCL, what matter is the accuracy of the algorithm on test examples. So, we should tune hyperparameters so that they have best performance on the unseen examples. One of the best way to estimate performance of hypeparameters on small datasets (such as Gender Detection) is cross validation. Cross-validation gives a plausible estimates the performance of the hyperparameters for the test phase. Therefore, in the grid search we considered 5-fold cross-validation for evaluating performance of hyperparameters and chose the hyperparameters which had the best cross-validation error on training set.
 
 \subsection{L-BFGS}
 For testing our implementation of training with L-BFGS, we used the gender detection dataset mentioned in the homework. This is a dataset with more than 800 features and less than 600 samples, meaning that there are many features that are redundant. The data files show that the input data for training and testing are both very sparse, this increases the potential for over-fitting in the case of logistic regression. However, as we mentioned before, regularization comes to our help to prevent over-fitting.
