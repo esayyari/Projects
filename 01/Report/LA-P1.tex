@@ -68,8 +68,9 @@ Is the probability of the $i$th sample $x^i$ belonging to class with label 1.
 \subsubsection{Performance Measure}
 
 \subsection{L-BFGS}
+For testing our implementation of training with L-BFGS, we used the gender detection dataset mentioned in the homework. This is a dataset with more than 800 features and less than 600 samples, meaning that there are many features that are redundant. The data files show that the input data for training and testing are both very sparse, this increases the potential for over-fitting in the case of logistic regression. However, as we mentioned before, regularization comes to our help to prevent over-fitting.
 \subsubsection{Initialization}
-The initialization of the parameters is limited to the weight vector $beta$, which is the decision boundary for logistic regression. 
+The initialization of the parameters is limited to the weight vector $beta$, which is the decision boundary for logistic regression. An incorrect choice for the initial value would be a vector of all zeros, $[0\; 0\; \ldots\; 0]$.
 \subsubsection{Preprocessing}
 \subsubsection{Grid Search}
 \subsubsection{Performance Measure}

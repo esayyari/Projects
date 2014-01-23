@@ -34,9 +34,21 @@ class LogisticRegression(Transformer):
                 self.batch_size = kwrds[k]
             elif k=="weight_decay":
                 self.weight_decay = kwrds[k]
-    
+            elif k=="lcl":
+                self.lcl_lbfgs = kwrds[k]
+            elif k=="lcltest":
+                self.lcltest_lbfgs = kwrds[k]
+            elif k=="X_test":
+                self.X_test = kwrds[k]
+            elif k=="y_test":
+                self.y_test = kwrds[k]
+
     def get_params(self,deep=False):
         return dict({"learning":self.learning,#either SGD or LBFGS
+                     "lcl":self.lcl_lbfgs,
+                     "lcltest":self.lcltest_lbfgs,
+                     "X_test":self.X_test,
+                     "y_test":self.y_test,
         })
 
     #fit function
@@ -150,7 +162,10 @@ class LogisticRegression(Transformer):
     #convert a set of inputs to the corresponding label values
     def transform(self,X):
         n,d = X.shape
-        augX = np.concatenate([X.toarray(),np.ones([n,1])],axis=1)
+        if type(X)==np.ndarray:
+            augX = np.concatenate([X,np.ones([n,1])],axis=1)
+        else:
+            augX = np.concatenate([X.toarray(),np.ones([n,1])],axis=1)
         augX = self.scaler.transform(augX)
         Pm = 1./ (1. + np.exp(-np.dot(augX,self.beta)))
         decision = Pm>=0.5
@@ -163,9 +178,9 @@ class LogisticRegression(Transformer):
         return np.mean(y_p==y)
         
     def bookkeeping(self,beta,*args):
-        self.lcl.append(self.LCL(beta))
-        self.lcltest.append(self.lclTest(beta)) 
-        self.betanorm.append(np.sqrt(np.square(beta).sum()))
+        self.lcl_lbfgs.append(self.LCL(beta))
+        self.lcltest_lbfgs.append(self.lclTest(beta))
+#        self.betanorm.append(np.sqrt(np.square(beta).sum()))
        # beta is a column vector of size d
 
     def lclTest(self,beta,*args):
