@@ -7,14 +7,15 @@ from sklearn.preprocessing import StandardScaler
 
 class LogisticRegression(Transformer):
     def __init__(self,**kwrds):
-        self.learning = "SGD"
-        self.eta=0.01
-        self.eta_decay=0.9
-        self.beta_decay=0
-        self.max_epoc=10
-        self.batch_size=1
-        self.eps=1e-6
-        self.weight_decay=1
+        self.learning       = "SGD"
+        self.eta            =0.01
+        self.eta_decay      =0.9
+        self.beta_decay     =0
+        self.max_epoc       =10
+        self.batch_size     =1
+        self.eps            =1e-6
+        self.weight_decay   =1
+        self.init_beta      = 0.1
         Transformer.__init__(self,**kwrds)
     
     #parameters set and get
@@ -42,6 +43,8 @@ class LogisticRegression(Transformer):
                 self.X_test = kwrds[k]
             elif k=="y_test":
                 self.y_test = kwrds[k]
+            elif k=="init_beta":
+                self.init_beta = kwrds[k]
 
     def get_params(self,deep=False):
         return dict({"learning":self.learning,#either SGD or LBFGS
@@ -49,6 +52,8 @@ class LogisticRegression(Transformer):
                      "lcltest":self.lcltest_lbfgs,
                      "X_test":self.X_test,
                      "y_test":self.y_test,
+                     "weight_decay":self.weight_decay,
+                     "init_beta":self.init_beta,
         })
 
     #fit function
@@ -123,8 +128,8 @@ class LogisticRegression(Transformer):
         self.X_train = augX
         self.y_train = y
         #initialize parameters
-        beta = 0.1 * np.random.randn(d+1)
-        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,factr=1e17,
+        beta = self.init_beta * np.random.randn(d+1)
+        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,#factr=1e17,
                                               callback=self.bookkeeping)
         #print type(ret)
         #store the parameters
@@ -156,7 +161,7 @@ class LogisticRegression(Transformer):
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         t1 = y-Pm
         g = np.tile(t1.reshape([-1,1]),[1,d]) *X
-        g = -np.sum(g,axis=0)+self.weight_decay*beta
+        g = -np.sum(g,axis=0)+2.*self.weight_decay*beta
         return g
         
     #convert a set of inputs to the corresponding label values
