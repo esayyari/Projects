@@ -11,7 +11,7 @@ class LogisticRegression(Transformer):
         self.eta=0.01
         self.eta_decay=0.9
         self.beta_decay=0
-        self.max_epoc=5
+        self.max_epoc=10
         self.batch_size=1
         self.eps=1e-6
         self.weight_decay=1
@@ -70,23 +70,34 @@ class LogisticRegression(Transformer):
         #initialize parameters
         self.beta = 0.0001 * np.random.randn(d+1)
         obj=self.LCL(self.beta)
+#         print obj
 #         print 'epoch: {0} LCL: {1}'.format(0, obj)
-        for epoch in range(self.max_epoc):
-            for iter in range(n):
-                g=self.LCLderiv(self.beta,self.batch_size, iter)
-                self.beta-= self.eta*g
+        if self.weight_decay:
+            fname=str(self.batch_size)+'RLR.log'
+        else:
+            fname=str(self.batch_size)+'LR.log'
+        with open(fname, 'w') as f:
+            f.write('epoch\tobj\tnormg\tnormb ')
+            for epoch in range(self.max_epoc):
+                for iter in range(n):
+                    g=self.LCLderiv(self.beta,self.batch_size, iter)
+                    f.write('{0}\t{1}\t{2}\t{3}\n'.format( epoch, obj, np.linalg.norm(g),np.linalg.norm(self.beta) ))
+                    self.beta-= self.eta*g
+                    obj=self.LCL(self.beta)
+                    
+                    if obj==float('inf'):
+    #                     print "Epoch: {0}  Iter: {1}  Objective: {2}".format(epoch, iter , obj) , np.linalg.norm(self.beta), np.linalg.norm(g)
+                        return
+    #                 print 'iter: {0} LCL: {1}'.format(iter, obj)
+                
+                self.eta*=self.eta_decay
                 obj=self.LCL(self.beta)
-#                 print 'norm_beta',np.linalg.norm(self.beta) ,'obj', obj
-                if obj==float('inf'):
-                    return
-#                 print 'iter: {0} LCL: {1}'.format(iter, obj)
-            self.eta*=self.eta_decay
-            obj=self.LCL(self.beta)
-#             if np.linalg.norm(beta, ord=inf) <0.001:
-#                 beta=np.zeros(d+1)
-#                 break
-            
-#             print 'epoch: {0} LCL: {1}'.format(epoch+1, obj)
+    #             print 'norm_beta',np.linalg.norm(self.beta) ,'obj',obj
+    #             if np.linalg.norm(beta, ord=inf) <0.001:
+    #                 beta=np.zeros(d+1)
+    #                 break
+                
+    #             print 'epoch: {0} LCL: {1}'.format(epoch+1, obj)
             
 
      # the LBFGS training function
@@ -117,6 +128,7 @@ class LogisticRegression(Transformer):
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
 #         print "***********", Pm.min(),Pm.max()
 #         self.lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm) #Mohsen's (not efficient)
+
         self.lcl[self.pos] = np.log(Pm[self.pos])
         self.lcl[self.neg] =  np.log(1.-Pm[self.neg])
         return -self.lcl.sum() +self.weight_decay* np.linalg.norm(beta)
