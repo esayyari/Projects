@@ -30,27 +30,58 @@
 \section{Introduction}
 Logistic regression is one of the simplest linear classifiers. This model is linear, and thus inherently limited to problems that are linearly separable. Despite these limitations, We found logistic regression to be very powerful. For some problem in our research, when we used logistic regression for classification, we found it to be at least as good as SVM. For these reasons, we were very eager to dig into the details of implementing logistic regression. The result is a python class called {\it LogisticRegression}, which implements both regularized stochastic gradient descent and regularized L-BFGS for training. This class adapts the same interface used by {\it sklearn} classifiers, so it can be used in conjunction with {\it sklearn} feature extractors and other classifiers  in  pipelines. We hope to continue our work to the end of this course and implement different projects to provide an educational library of different classifiers.
 \section{Design and Analysis of Algorithm}
-Objective function
+In machine learning tasks, we usually want to decide about the state of the world, $y$, based on the observation $x$. To do this, we define a loss function to be minimized. And finally, we seek to find optimal decision function for our loss function. However, we may sometimes maximize the negative form of loss function to seek this goal. 
+
+In this project, we are working with binary outcomes, $y\in\{{0,1}\}$, and observations ($x$) are real-valued vectors.  Furthermore, a logistic regression model for the conditional probability of y given x is assumed. Mathematically, we could write it as:
 \begin{equation}
-LCL=\sum_{i:y_i=1} \log p_i +\sum_{i:y_i=-1} \log (1-p_i)
+p(y|x;\alpha,\beta)=\frac{1}{1+exp-[\alpha+\sum_{j=1}^d\beta_jx_j}]
+\end{equation}
+where $x_j$ refers to jth feature of a d dimensional feature observation. 
+
+So we want to learn a logistic regression model for the given training set, $\{(x_1,y_1),(x_2,y_2),...,(x_n,y_n)\}$. The training procedure is maximizing the log conditional likelihood for each training example:
+\begin{equation}
+LCL = \sum_{i=1}^n \log L(\theta;y_i | x_i).
+\end{equation}
+
+Moreover, we assume that $\log L(\theta;y_i|x_i)= \log p_i$ if $y_i=1$ and $\log L(\theta;y_i|x_i)=\log(1-p_i)$ if $y_i=0$, where $p_i = p(y=1|x_i;\theta).$
+ 
+So the objective function is:
+\begin{equation}
+LCL=\sum_{i:y_i=1} \log p_i +\sum_{i:y_i=-1} \log (1-p_i).
 \label{eq:LCL}
 \end{equation}
 
-Partial derivative
+To solve the maximization problem we have to compute the partial derivative of LCL with respect to $\beta_js$ and set it to zero. The partial derivative of objective function is:
+
 \begin{equation}
-\nabla_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i} (y_i-p_i)x_{ij}
+\nabla_j=\frac{\partial}{\partial \beta_j}LCL=\sum_{i} (y_i-p_i)x_{ij}=0
+\label{eq:pLCL}
+\end{equation}
+ where $x_{ij}$ is the value of jth feature of the ith observation (training example). So we will have a system of d equations and d unknowns which is extremely nonlinear. One of the ways to solve this system of equations is gradient descent. Thus in each step we have to update $\beta_j$ by the updating rule:
+ \begin{equation}
+ \beta_j=\beta_j+\lambda \frac{\partial}{\partial \beta_j}LCL.
+ \end{equation}
+ 
+ The major problem to solve this equation based on all features and training examples is time complexity. Evaluating this equation for all n training examples and all d features requires O(nd) time, and after each iteration $\beta_j$  can be adjusted a little. We can ease this problem by using stochastic methods. The idea is that at each iteration we use just one training example to update $\beta_j$. The mathematical equation for this solution is:
+
+\begin{equation}
+\tilde{\nabla}_j=\frac{\partial}{\partial \beta_j}LCL=\sum_{i \in \Omega} (y_i-p_i)x_{ij}
 \label{eq:pLCL}
 \end{equation}
 
-Stochastic gradient $\tilde{\nabla}$ for the stochastic mini-batch $\Omega$
-\begin{equation}
-\tilde{\nabla}_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i \in \Omega} (y_i-p_i)x_{ij}
-\label{eq:pLCL}
-\end{equation}
+Stochastic gradient descent is very useful in practice. if training data is sparse and for most of observations, $x_is$, the jth feature is zero ($x_{ij}=0$) and we could skip them to update $\beta_j$. So the time complexity of one epoch is O(nfd), where n is the total number of observations, d is the number of features, and f is the average number of nonzero features per example. In the following parts we will discuss each section separately. 
+
 \subsection{Stochastic Gradient Descent}
 The Stochastic Gradient Descent (SGD) method approximates objective function, simply by restricting the training set to a mini-batch, i.e. random sample. 
-This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence.
+This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence. We could write it mathematically as:
 
+\begin{equation}
+\beta_j=\beta_j+\lambda (y_i-p_i)x_{ij}
+\end{equation}
+
+Where $i$ is selected randomly. As described above, the complexity of main solution is O(nd), where n is the number of training examples and d is the number of features. While the time complexity of stochastic gradient descent is O(nfd), where f is the average number of nonzero feature values per observation. In fact we could skip most $x_js$ to update $\beta_j$. More specifically, for sparse data zero $x_j$ will not update $\beta_j$. So we could simply ignore them. At each epoch we may update all of the $\beta_js$ once, based on one data, or we can update one $\beta_j$ based on all of the training set first and then go to other parameters.
+
+Presented stochastic gradient descent algorithm is unconstraint. The very important problem with unconstraint algorithm is that it may cause overfitting. To solve this problem we use regularization which will be discussed in following sections.
 \subsection{LBFGS}
 We used the {\it fmin\_l\_bfgs\_b} from { \it scipy.optimize} package, which implements the limited memory {\it BFGS} algorithm and is written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal. This function takes as input the function to be minimized, which is in this case the negative of regularized conditional log-likelihood,
 \begin{equation}
