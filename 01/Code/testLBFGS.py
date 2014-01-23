@@ -19,12 +19,10 @@ idx = np.where(y_test==-1)
 y_test[idx] = 0.
 parameters = dict({
     "clf__weight_decay"      : [.001,.01,.1,1,10,100,1000],
-    "clf__lcl"        : [[]],
-    "clf__lcltest"    : [[]],
-    "clf__init_beta"  : [0.,0.00001,.0001,0.001,.01,.1,1.,10],
+#    "clf__init_beta"         : [0.,0.00001,.0001,0.001,.01,.1,1.,10],
                   })
 
-lr = LogisticRegression(learning="LBFGS",X_test=X_test,y_test=y_test,lcl=[],lcltest=[])
+lr = LogisticRegression(learning="LBFGS",X_test=X_test,y_test=y_test)
 pipeline = Pipeline([
                         ("clf"  ,lr),
                     ])
@@ -46,7 +44,7 @@ parameters = dict({
 ppln = Pipeline([
                         ("clf"  ,sklr),
                     ])
-f = GridSearchCV(ppln,parameters,n_jobs=-1,verbose=-1,cv=3)
+f = GridSearchCV(ppln,parameters,n_jobs=-1,verbose=-1,cv=10)
 f.fit(X_train,y_train)
 print "score on test:",f.score(X_test,y_test)
 print("Best score: %0.3f" % f.best_score_)

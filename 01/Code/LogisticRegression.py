@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import sklearn
 import scipy.optimize
@@ -14,8 +15,12 @@ class LogisticRegression(Transformer):
         self.max_epoc       =10
         self.batch_size     =1
         self.eps            =1e-6
-        self.weight_decay   =1
-        self.init_beta      = 0.1
+        self.weight_decay   =0
+        self.init_beta      = 0.01
+        self.lcl_lbfgs      = []
+        self.lcltest_lbfgs  = []
+        self.rlcl_lbfgs     = []
+        self.rlcltest_lbfgs = []
         Transformer.__init__(self,**kwrds)
     
     #parameters set and get
@@ -35,10 +40,6 @@ class LogisticRegression(Transformer):
                 self.batch_size = kwrds[k]
             elif k=="weight_decay":
                 self.weight_decay = kwrds[k]
-            elif k=="lcl":
-                self.lcl_lbfgs = kwrds[k]
-            elif k=="lcltest":
-                self.lcltest_lbfgs = kwrds[k]
             elif k=="X_test":
                 self.X_test = kwrds[k]
             elif k=="y_test":
@@ -48,8 +49,6 @@ class LogisticRegression(Transformer):
 
     def get_params(self,deep=False):
         return dict({"learning":self.learning,#either SGD or LBFGS
-                     "lcl":self.lcl_lbfgs,
-                     "lcltest":self.lcltest_lbfgs,
                      "X_test":self.X_test,
                      "y_test":self.y_test,
                      "weight_decay":self.weight_decay,
@@ -127,13 +126,23 @@ class LogisticRegression(Transformer):
         augX = self.scaler.transform(augX)
         self.X_train = augX
         self.y_train = y
+        #X_test
+        n_test,_ = self.X_test.shape
+        ones = np.ones([n_test,1])
+        augX_test = np.concatenate([self.X_test,ones],axis=1)
+        augX_test = self.scaler.transform(augX_test)
+        self.X_test = augX_test
         #initialize parameters
         beta = self.init_beta * np.random.randn(d+1)
-        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,#factr=1e17,
+        ret = scipy.optimize.fmin_l_bfgs_b(self.LCL, beta,fprime=self.LCLderiv,#factr=1e15,
                                               callback=self.bookkeeping)
         #print type(ret)
         #store the parameters
         self.beta = ret[0]
+        #saving lcl and lcltest to file
+        f = open("lcl.pickle","wb")
+        pickle.dump([self.rlcl_lbfgs,self.rlcltest_lbfgs,self.lcl_lbfgs,self.lcltest_lbfgs],f)
+        f.close()
         #print self.beta
         #print "params:",ret
         
@@ -183,8 +192,10 @@ class LogisticRegression(Transformer):
         return np.mean(y_p==y)
         
     def bookkeeping(self,beta,*args):
-        self.lcl_lbfgs.append(self.LCL(beta))
-        self.lcltest_lbfgs.append(self.lclTest(beta))
+        self.rlcl_lbfgs.append(-self.LCL(beta))
+        self.rlcltest_lbfgs.append(-self.lclTest(beta))
+        self.lcl_lbfgs.append(-self.lclOnly(beta,self.X_train,self.y_train))
+        self.lcltest_lbfgs.append(-self.lclOnly(beta,self.X_test,self.y_test))
 #        self.betanorm.append(np.sqrt(np.square(beta).sum()))
        # beta is a column vector of size d
 
@@ -192,14 +203,19 @@ class LogisticRegression(Transformer):
         X = self.X_test# n x d
         y = self.y_test# n x 1
         n,d = X.shape
-        ones = np.ones([n,1])
-        #augment X with 1
-        augX = np.concatenate([X,ones],axis=1)
-        augX = self.scaler.transform(augX)
-        X = augX
+#        ones = np.ones([n,1])
+#        #augment X with 1
+#        augX = np.concatenate([X,ones],axis=1)
+#        augX = self.scaler.transform(augX)
+#        X = augX
         Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
         #print Pm.min(),Pm.max()
         lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
         return -lcl.sum() + self.weight_decay * np.sqrt(np.square(beta).sum())
- 
+
+    def lclOnly(self,beta,X,y):
+        Pm = 1. / (1. + np.exp(-np.dot(X,beta)))
+        lcl = y * np.log(Pm) + (1.-y) * np.log(1.-Pm)
+        return -lcl.sum()
+
         

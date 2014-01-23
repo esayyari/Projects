@@ -80,6 +80,23 @@ For performance measurement, we can look at the conditional log-likelihood at di
 \section{Results of Experiments}
 \subsection{Regularized Logistic Regression}
 \subsection{ Regularized L-BFGS}
+For the first experiment, we set the regularization coefficient to 0, and allowed the initial weight value to be selected by grid search over $[0.,1e-5,1e-4,1e-3,1e-2,1e-1,1.,10]$. The optimal value of initial weight vector was selected to be 0.1 by grid search, meaning that the weight was initialized to a vector of Normal random numbers multiplied by $0.1$. Figure \ref{figNoReg} shows the evolution of LCL vs. iteration number for both train and test data. Note that for this case, We had to increase the parameter {\it factr} in {\it fmin\_l\_bfgs\_b} which is the threshold for normalized changes in the objective function.
+\begin{figure}[h!]
+\label{figNoReg}
+\centering
+\includegraphics[width=0.8\textwidth]{noreg.png}
+\caption{LCL for train and test sets for the case of learning with no regularization, i.e. $\mu=0$.}
+\end{figure}
+In the second experiment, we omitted the search for initial value for the parameter vector $\beta$ and instead, used a constant value of 0.1. For the regularization parameter $\mu$, we performed grid search over the set of values $[.001,.01,.1,1,10,100,1000]$ with 3-fold cross validation over the train set. Figure {\ref{figNoBeta0}} plots the LCL and RLCL for both train and test sets.
+
+\begin{figure}[h!]
+\label{figNoBeta0}
+\centering
+\includegraphics[width=0.8\textwidth]{nobeta0.png}
+\caption{LCL and RLCL for train and test sets for the case with no search over initial weight values.}
+\end{figure}
+
+
 
 \section{Findings and Lessons Learned}
 \subsection{Numerical Issues and Preprocessing}
