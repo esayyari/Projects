@@ -28,12 +28,26 @@ lr = LogisticRegression(learning="LBFGS",X_test=X_test,y_test=y_test,lcl=[],lclt
 pipeline = Pipeline([
                         ("clf"  ,lr),
                     ])
-f = GridSearchCV(pipeline,parameters,n_jobs=-1,verbose=-1,cv=10)
+f = GridSearchCV(pipeline,parameters,n_jobs=-1,verbose=-1,cv=3)
 f.fit(X_train,y_train)
 best_parameters = f.best_estimator_.get_params()
 for param_name in sorted(parameters.keys()):
     print("\t%s: %r" % (param_name, best_parameters[param_name]))
-sklr = linear_model.LogisticRegression(penalty="l2",C=10000.).fit(X_train,y_train)
 print "score on test:",f.score(X_test,y_test)
 print("Best score: %0.3f" % f.best_score_)
-print "sklearn.lr score:",sklr.score(X_test,y_test)
+
+
+sklr = linear_model.LogisticRegression(penalty="l2",C=10000.)
+parameters = dict({
+    "clf__C"         : [.001,.01,.1,1,10,100,1000],
+    "clf__penalty"      : ["l1","l2"],
+                  })
+
+ppln = Pipeline([
+                        ("clf"  ,sklr),
+                    ])
+f = GridSearchCV(ppln,parameters,n_jobs=-1,verbose=-1,cv=3)
+f.fit(X_train,y_train)
+print "score on test:",f.score(X_test,y_test)
+print("Best score: %0.3f" % f.best_score_)
+#print "sklearn.lr score:",sklr.score(X_test,y_test)

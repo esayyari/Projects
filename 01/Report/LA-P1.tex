@@ -20,7 +20,6 @@
             linkcolor=darkblue,urlcolor=darkblue,
             anchorcolor=darkblue,citecolor=darkblue}
 \newcommand{\sign}{\text{sign}}
-\newcommand{\argmin}{\arg\!\max}
 \begin{document}
 
 \title{Learning Algorithms, Project 1}
@@ -28,44 +27,31 @@
 \maketitle
 
 \section{Introduction}
-In this project, we have implemented Regularized Logistic Regression (RLR) using Stochastic Gradient Descent (SGD) and L-BFGS method. We studied the behavior of RLR on the Gender Recognition dataset \footnote{The Gender Recognition dataset available at \url{http://mlcomp.org/datasets/1571}}. This report is organized as follows: in section 2 we explain the design and analysis of our implementation of RLR, in section 3 we specify the design of experiments and implementation considerations. We will demonstrate our experimental results in section 4, and finally we outline the lessons we have learned from this project in section 5.
-
+Logistic regression is one of the simplest linear classifiers. This model is linear, and thus inherently limited to problems that are linearly separable. Despite these limitations, We found logistic regression to be very powerful. For some problem in our research, when we used logistic regression for classification, we found it to be at least as good as SVM. For these reasons, we were very eager to dig into the details of implementing logistic regression. The result is a python class called {\it LogisticRegression}, which implements both regularized stochastic gradient descent and regularized L-BFGS for training. This class adapts the same interface used by {\it sklearn} classifiers, so it can be used in conjunction with {\it sklearn} feature extractors and other classifiers  in  pipelines. We hope to continue our work to the end of this course and implement different projects to provide an educational library of different classifiers.
 \section{Design and Analysis of Algorithm}
-In this project, we consider the binary classification problem with the training set of $n$ labeled examples ${\{(x_i,y_i)\}}^{n}_{i=1}$, $y_i \in \{0,1\}$, $w,x \in \mathbb{R}^d$. The logistic regression maximizes Log Conditional Likelihood (LCL) over the training examples:
+Objective function
 \begin{equation}
 LCL=\sum_{i:y_i=1} \log p_i +\sum_{i:y_i=-1} \log (1-p_i)
 \label{eq:LCL}
 \end{equation}
 
-which $p_i=P_{Y|X}(1|x_i)=\sigma(w^Tx_i +b)$ are posterior probabilities of the training examples and $\sigma(.)$ is the sigmoid function. 
-It is common to augment training examples with an extra dimension and set it to one for all the training examples,  i.e. $x_{i0}=1$ and defined $\beta=(b, w^T)^T$.
-Maximizing LCL is a convex optimization problem, therefore the local maximum is indeed global maximum. So we can use gradient based methods to find local solution of the LCL maximization problem. For both SGD and L-BFGS gradient of the LCL is the key information that solver uses to find solution. The partial derivative of LCL is defined as
+Partial derivative
 \begin{equation}
 \nabla_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i} (y_i-p_i)x_{ij}
 \label{eq:pLCL}
 \end{equation}
- In the next subsections we show how we maximized the LCL using SGD and L-BFGS.
 
-\subsection{Stochastic Gradient Descent}
-The SGD method approximates objective function, simply by restricting the training set to a mini-batch, i.e. random sample from training set. 
-This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence. 
-
-Also, in many applications the training data is not available as a batch, and training examples arrive in advance. Such a paradigm is called \emph{Online Learning} which SGD is the main tool of solving these problems.
-
-Stochastic gradient $\tilde{\nabla}$ for the stochastic mini-batch $\Omega$ is defined
+Stochastic gradient $\tilde{\nabla}$ for the stochastic mini-batch $\Omega$
 \begin{equation}
 \tilde{\nabla}_j=\frac{\partial LCL }{\partial \beta_j}LCL=\sum_{i \in \Omega} (y_i-p_i)x_{ij}
 \label{eq:pLCL}
 \end{equation}
-SGD steps along steepest ascent direction which is the gradient 
-\begin{equation}
-\beta_j \leftarrow \beta_j+ \lambda \sum_{i \in \Omega} (y_i-p_i)x_{ij}
-\end{equation}
-which $\lambda$ is the \emph{learning rate} (step-length). It is important to set learning rate to an admissible value (neither too large or too small). Apart from adaptive schemes (Backtracking line search), Heuristics (Levenburg-Marquardt method), we use a simple method for updating learning rate. The algorithm starts with $\lambda_0$ and after each epoch (one pass over training set) it decays the learning rate by a constant factor $\eta$. By using this strategy we are need to find a good value for the hyperparameter $\lambda_0$, using grid search and cross-validation
-
+\subsection{Stochastic Gradient Descent}
+The Stochastic Gradient Descent (SGD) method approximates objective function, simply by restricting the training set to a mini-batch, i.e. random sample. 
+This makes a huge difference when the training set is large and can not be fitted into memory. We implemented SGD so that the size of mini-batch could be set\footnote{When size of mini-batch is very small, e.g. 1, the stochastic gradient become noisy leading to slow rate of convergence. On the other hand, we can choose to use larger mini-batch size to reduce the variance of the gradient, which makes gradient computation more costly.} to achieve desirable rate of convergence.
 
 \subsection{LBFGS}
-We used the $fmin\_l\_bfgs\_b$ from $scipy.optimize$ package, which implements the limited memory {\it BFGS} algorithm and is written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal. This function takes as input the function to be minimized, which is in this case the negative of regularized conditional log-likelihood,
+We used the {\it fmin\_l\_bfgs\_b} from { \it scipy.optimize} package, which implements the limited memory {\it BFGS} algorithm and is written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal. This function takes as input the function to be minimized, which is in this case the negative of regularized conditional log-likelihood,
 \begin{equation}
 RLCL = \sum_{i=1}^N y_i \log(P_i) + (1-y_i)\log(1 - P_i) - \mu \|\beta\|_2^2
 \end{equation}
@@ -74,53 +60,26 @@ where
 P_i = \frac{1}{1+e^{-\sum_{j=1}^d \beta_j x^i_j}}
 \end{equation}
 Is the probability of the $i$th sample $x^i$ belonging to class with label 1. 
-
-<<<<<<< HEAD
-\subsection{L-BFGS}
-For testing our implementation of training with L-BFGS, we used the gender detection dataset mentioned in the homework. This is a dataset with more than 800 features and less than 600 samples, meaning that there are many features that are redundant. The data files show that the input data for training and testing are both very sparse, this increases the potential for over-fitting in the case of logistic regression. However, as we mentioned before, regularization comes to our help to prevent over-fitting.
+\section{Design of Experiments}
+\subsection{SGD}
 \subsubsection{Initialization}
-The initialization of the parameters is limited to the weight vector $beta$, which is the decision boundary for logistic regression. An incorrect choice for the initial value would be a vector of all zeros, $[0\; 0\; \ldots\; 0]$.
 \subsubsection{Preprocessing}
 \subsubsection{Grid Search}
 \subsubsection{Performance Measure}
-=======
-\subsection{Regularization}
-The gradient based methods such as SGD and L-BFGS always take step along direction of ascent \footnote{Any vector $s$ which satisfies $s^T\nabla>0$ is kind of direction of ascent.}. This gradient is always positive, since $y_i-p_i \geq 0$ $\forall y_i, p_i$. So after each epoch $\beta_j$ will be greater or equal to the previous $\beta_j$. This implies that the learning algorithm tends to assign either positive or negative large values to $\beta_j$. In this situation the parameters are overtrained for the current training examples, and the performance on the training set is not representative for the unseen examples, since the learning algorithm become \emph{optimistic} about its performance. This phenomena is known as overfitting in machine learning community and the standard measure for it is called regularization. Among all kinds of regularization, we choose $l_2$-norm  regularization because it is
-\begin{itemize}
-	\item simple to implement and analyze
-	\item smooth and convex
-	\item computationally inexpensive
-\end{itemize}
-So, the optimization problems becomes
-\begin{equation}
-\beta^* = \operatorname*{arg\,max}_{\beta}{LCL - \frac{\mu}{2}\Vert \beta \Vert^2_2}
-\end{equation}
-which the term $\Vert\beta_j\Vert^2_2=\beta^T\beta$ penalizes $\beta$s with large magnitudes and weight decay $\mu$ is the trade-off hyperparameter between bias (underfiting) and variance (overfitting). Our final update rule for RLR is
-\begin{equation}
-\beta_j \leftarrow \ \beta_j+\lambda\left((y_i-p_i)x_j-\mu\beta_j\right)
-\end{equation}
 
-\subsection{Computational Complexity}
-Our implementation of SGD consist of two nested loops. The outer loop counts up to \emph{max-epochs}, which in each of its iterations it takes one pass over training set.
-In the inner loop, algorithm selects a mini-batch of size $|\Omega|=k$ from dataset and computes gradient for it which costs $\mathcal{O}(kd)$, provided that we reuse the probability estimates. The inner loop iterates $\frac{n}{k}$ times so the total computational complexity of the algorithm is of $\mathcal{O}(nd)$
-
-However, we implemented our code so that it can exploits the sparsity structure of the data, so, having average $\tilde{d}$ nonzero feature per training example, the computational complexity of our implementation is $\mathcal{O}(n\tilde{d})$.
-
-\subsection{Implementation}
-We have efficiently implemented our code using \emph{Python} scripting language and well known packages \emph{NumPy} and \emph{SciPy}. The SciPy package provides sparse data structures and corresponding efficient sparse methods for dot products and matrix computation.
-
-For the hyperparameters $MAX_EPOCHS$ and $\eta$ (learning rate decay) we chose 10 and $0.9$, respectively. Also, for early stop, we used tolerance of $0.01$ in increase of objective function. Finally, we initialized $\beta$ by small random values around zero.
-
-\section{Design of Experiments}
-\subsection{Initialization}
-\subsection{Preprocessing}
-\subsection{Grid Search}
-\subsection{Performance Measure}
-
-
+\subsection{L-BFGS}
+For testing our implementation of training with L-BFGS, we used the gender detection dataset mentioned in the homework. This is a dataset with more than 800 features and less than 600 samples, meaning that there are many features that are redundant. The data files show that the input data for training and testing are both very sparse, this increases the potential for over-fitting in the case of logistic regression. However, as we mentioned before, regularization comes to our help to prevent over-fitting.
+\subsubsection{Initialization}
+The initialization of the parameters is limited to the weight vector $beta$, which is the decision boundary for logistic regression. In order to select this parameter, we used grid search over different values $[0.,1e-5,1e-4,1e-3,1e-2,1e-1,1.,10]$. One might say that the effect of initial value for $\beta$ might be alleviated by choosing the $\mu$, the weight decay parameter for regularization, so there is no need for the initial value. However, since we are only searching over a small  set of values for $\mu$, introducing the initial value for $\beta$ helps to search the problem space more widely.
+\subsubsection{Preprocessing}
+The only preprocessing we used was the scaling, which subtracts the mean vector of the data and scales each dimension to unit variance. This helps to keep the changes in different dimensions of $\beta$ in almost the same range.
+\subsubsection{Grid Search}
+For grid search, We used the class {\it sklearn.grid\_search.GridSearchCV}. The benefit of using this class is that it also implements cross validation, so we can perform grid search and model selection at the same time. This class accepts a classifier as input and the number of folds for cross validation, and performs K-fold cross validation to select the best model.
+\subsubsection{Performance Measure}
+For performance measurement, we can look at the conditional log-likelihood at different iterations. The function {\it fmin\_l\_bfgs\_b} allows us to call a callback function after each iteration. We used this function to measure the RLCL for both train and test sets. We also trained the logistic regression from python package {\it sklearn} and compared the our results with that.
 \section{Results of Experiments}
-\subsection{Logistic Regression}
 \subsection{Regularized Logistic Regression}
+\subsection{ Regularized L-BFGS}
 
 \section{Findings and Lessons Learned}
 \subsection{Numerical Issues and Preprocessing}
@@ -129,3 +88,4 @@ For the hyperparameters $MAX_EPOCHS$ and $\eta$ (learning rate decay) we chose 1
 \subsection{Trade-off Between Mini-Batch size and Rate of Convergence}
 
 \end{document}
+
